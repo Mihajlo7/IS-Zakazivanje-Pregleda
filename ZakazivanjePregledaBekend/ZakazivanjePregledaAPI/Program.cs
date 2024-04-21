@@ -15,7 +15,8 @@ namespace ZakazivanjePregledaAPI
             {
                
             });
-            
+            builder.Services.ConfigureDapper();
+            builder.Services.ConfigurePregledRepo();
             builder.Services.ConfigureCORS();
             builder.Services.ConfigureIISIntegration();
             builder.Services.ConfigureLoggerService();

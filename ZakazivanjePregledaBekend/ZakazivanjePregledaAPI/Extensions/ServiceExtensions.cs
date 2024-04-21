@@ -1,4 +1,7 @@
 ﻿using Contracts;
+using DapperRepo;
+using DapperRepo.Repositories;
+using DapperRepo.Repositories.imp;
 using LoggerService;
 using System.Runtime.CompilerServices;
 
@@ -24,5 +27,11 @@ namespace ZakazivanjePregledaAPI.Extensions
 
         public static void ConfigureLoggerService(this IServiceCollection services)=>
             services.AddSingleton<ILoggerManager, LoggerManager>();
+
+        public static void ConfigureDapper(this IServiceCollection services) =>
+            services.AddSingleton<DapperContext>();
+
+        public static void ConfigurePregledRepo(this IServiceCollection services)=>
+            services.AddScoped<IPregledRepo, PregledRepo>();
     }
 }
