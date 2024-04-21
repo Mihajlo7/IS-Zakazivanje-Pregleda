@@ -3,6 +3,7 @@ using Models.DTOs;
 using Models.Entities;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,25 @@ namespace DapperRepo.Repositories.imp
         public PregledRepo(DapperContext dapperContext)
         {
             _dapperContext = dapperContext; 
+        }
+
+        public async Task<ResponseDTO> DeletePregled(DelPregled delPregled)
+        {
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("jmbg", delPregled.Jmbg);
+            parameters.Add("PregledId",delPregled.PregledId);
+
+            using(var connection= _dapperContext.CreateConnection())
+            {
+                var result = await connection.ExecuteAsync("dbo.insPregled",
+                    parameters, commandType: System.Data.CommandType.StoredProcedure);
+                _dapperContext.CloseConnection(connection);
+
+                return new ResponseDTO
+                {
+                    Message = "Uspesno je azuriran pregled sa id " + delPregled.PregledId + " ."
+                };
+            }
         }
 
         public async Task<IEnumerable<Osoba>> getGojazneOsobe()
@@ -93,10 +113,57 @@ namespace DapperRepo.Repositories.imp
             }
         }
 
+        public async Task<ResponseDTO> InsertPregled(InsPregledDTO pregledDTO)
+        {
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("jmbg", pregledDTO.Jmbg);
+            parameters.Add("ImeDoktora", pregledDTO.ImeDoktora);
+            parameters.Add("PrezimeDoktora", pregledDTO.PrezimeDoktora);
+            parameters.Add("DatumPregleda", pregledDTO.DatumPregleda);
+            parameters.Add("VremePregleda", pregledDTO.VremePregleda);
+
+            using(var connection = _dapperContext.CreateConnection())
+            {
+                var result = await connection.ExecuteAsync("dbo.insPregled",
+                    parameters, commandType: System.Data.CommandType.StoredProcedure);
+                _dapperContext.CloseConnection(connection);
+
+                return new ResponseDTO
+                {
+                    Message="Uspesno je kreiran pregled za osobu sa jmbg "+pregledDTO.Jmbg+" ."
+                };
+
+            }
+        }
+
         public Task<bool> TestConnection()
         {
             using var connection =_dapperContext.CreateConnection();
             return Task.FromResult(true);
+        }
+
+        public async Task<ResponseDTO> UpdatePregled(PregledDTO pregledDTO, string jmbg)
+        {
+            DynamicParameters parameters = new DynamicParameters();
+            parameters.Add("jmbg", jmbg);
+            parameters.Add("PregledId", pregledDTO.PregledId);
+            parameters.Add("ImeDoktora", pregledDTO.ImeDoktora);
+            parameters.Add("PrezimeDoktora", pregledDTO.PrezimeDoktora);
+            parameters.Add("DatumPregleda", pregledDTO.DatumPregleda);
+            parameters.Add("VremePregleda", pregledDTO.VremePregleda);
+
+            using(var connection = _dapperContext.CreateConnection())
+            {
+                var result =
+                   await connection.ExecuteAsync("dbo.updPregled",parameters, commandType: System.Data.CommandType.StoredProcedure);
+
+                _dapperContext.CloseConnection(connection);
+
+                return new ResponseDTO
+                {
+                    Message = "Uspesno je azuriran pregled sa id " + pregledDTO.PregledId + " ."
+                };
+            }
         }
     }
 }
