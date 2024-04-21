@@ -13,5 +13,7 @@ namespace DapperRepo.Repositories
         Task<bool> TestConnection();
         Task<IEnumerable<Osoba>> getGojazneOsobe();
         Task<OsobaDTO> GetPregledePoJmbg(string jmbg);
+        Task<MaxVisinaDTO> GetMaxVisina();
+        Task<IEnumerable<OsobaDTO>> GetUrgentnePreglede();
     }
 }

@@ -29,6 +29,18 @@ namespace DapperRepo.Repositories.imp
             }
         }
 
+        public async Task<MaxVisinaDTO> GetMaxVisina()
+        {
+            var query="SELECT dbo.fnMaxVisina() MaxVisina";
+
+            using(var connection = _dapperContext.CreateConnection())
+            {
+                var result=await connection.QueryAsync<MaxVisinaDTO>(query);
+                _dapperContext.CloseConnection(connection);
+                return result.First();
+            }
+        }
+
         public async Task<OsobaDTO> GetPregledePoJmbg(string jmbg)
         {
             var query = "SELECT * FROM dbo.fnVratiSvePregledePoJmbg(@jmbg)";
@@ -53,6 +65,32 @@ namespace DapperRepo.Repositories.imp
 
                 return osoba.First();
             };
+        }
+
+        public async Task<IEnumerable<OsobaDTO>> GetUrgentnePreglede()
+        {
+            var query = "SELECT * FROM dbo.fnUrgentniPregledi()";
+
+            using(var connection= _dapperContext.CreateConnection())
+            {
+                var osobe = await connection.QueryAsync<OsobaDTO, PregledDTO, OsobaDTO>(query, map:
+                    (osoba, pregled) =>
+                    {
+                        osoba.Pregledi.Add(pregled);
+                        return osoba;
+                    },splitOn:"PregledId");
+
+                _dapperContext.CloseConnection(connection );
+
+                var result = osobe.GroupBy(osoba => osoba.OsobaId).Select(grupa =>
+                {
+                    var grupisaneOsobe = grupa.First();
+                    grupisaneOsobe.Pregledi = grupa.Select(osoba => osoba.Pregledi.Single()).ToList();
+                    return grupisaneOsobe;
+                });
+
+                return result;
+            }
         }
 
         public Task<bool> TestConnection()

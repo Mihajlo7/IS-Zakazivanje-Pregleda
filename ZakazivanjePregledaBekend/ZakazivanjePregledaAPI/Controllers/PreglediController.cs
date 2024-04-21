@@ -31,5 +31,15 @@ namespace ZakazivanjePregledaAPI.Controllers
         {
             return Ok(await _pregledRepo.GetPregledePoJmbg(jmbg));
         }
+        [HttpGet ("maxVisina")]
+        public async Task<IActionResult> GetMaxVisina()
+        {
+            return Ok(await _pregledRepo.GetMaxVisina());
+        }
+        [HttpGet("urgentniPregledi")]
+        public async Task<IActionResult> GetUrgentnePreglede()
+        {
+            return Ok(await _pregledRepo.GetUrgentnePreglede());
+        }
     }
 }
