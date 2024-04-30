@@ -29,8 +29,8 @@ GO
 CREATE TABLE Persons(
 Person_id UNIQUEIDENTIFIER PRIMARY KEY,
 JMBG CHAR(13) UNIQUE CHECK(LEN(JMBG)=13),
-First_Name NVARCHAR(30) NOT NULL CHECK(First_Name LIKE '[A-Š]%' AND LEN(First_Name)>=2),
-Last_Name NVARCHAR(30) NOT NULL CHECK(Last_Name LIKE '[A-Š]%' AND LEN(Last_Name)>=2),
+First_Name NVARCHAR(30) NOT NULL CHECK(First_Name LIKE '[A-Å ]%' AND LEN(First_Name)>=2),
+Last_Name NVARCHAR(30) NOT NULL CHECK(Last_Name LIKE '[A-Å ]%' AND LEN(Last_Name)>=2),
 Weight_KG DECIMAL(5,2) NOT NULL,
 Height_CM DECIMAL(5,2) NOT NULL,
 BMI DECIMAL(5,2)
@@ -48,8 +48,8 @@ ALTER TABLE Persons ADD CONSTRAINT Height_CONS CHECK(Height_CM BETWEEN 30 AND 40
 CREATE TABLE Appointments(
 Appointment_id UNIQUEIDENTIFIER,
 Person_id UNIQUEIDENTIFIER,
-First_Name_Doctor NVARCHAR(30) NOT NULL CHECK(First_Name_Doctor LIKE '[A-Š]%' AND LEN(First_Name_Doctor)>=2),
-Last_Name_Doctor NVARCHAR(30) NOT NULL CHECK(Last_Name_Doctor LIKE '[A-Š]%' AND LEN(Last_Name_Doctor)>=2),
+First_Name_Doctor NVARCHAR(30) NOT NULL CHECK(First_Name_Doctor LIKE '[A-Å ]%' AND LEN(First_Name_Doctor)>=2),
+Last_Name_Doctor NVARCHAR(30) NOT NULL CHECK(Last_Name_Doctor LIKE '[A-Å ]%' AND LEN(Last_Name_Doctor)>=2),
 Date_Appointment DATE NOT NULL CHECK(Date_Appointment> GETDATE()),
 Time_Appointment TIME(0) NOT NULL,
 PRIMARY KEY (Appointment_id,Person_id),
@@ -104,4 +104,32 @@ BEGIN
 	SET BMI=@Bmi
 	WHERE Person_id=@Person_id;
 END;
+
+-- Creating view for emergency appointments
+
+CREATE VIEW view_Emergency_Appointments
+AS
+SELECT p.Person_id PersonId,p.JMBG "JMBG", p.First_Name "FirstName", p.Last_Name "LastName", p.Height_CM "Height",p.Weight_KG "Weight", p.BMI "BMI", 
+a.Appointment_id "AppointmentId", a.First_Name_Doctor "DoctorFirstName", p.Last_Name "DoctorLastName",a.Date_Appointment "DateAppointment",a.Time_Appointment "TimeAppointment"
+FROM Persons p INNER JOIN Appointments a ON (p.Person_id=a.Person_id)
+WHERE a.Date_Appointment<=DATEADD(MONTH,1,GETDATE());
+
+-- Creating function for emergency appointements
+
+CREATE OR ALTER FUNCTION fn_Emergency_Appointments()
+RETURNS TABLE
+AS
+RETURN
+(
+	SELECT p.Person_id PersonId,p.JMBG "JMBG", p.First_Name "FirstName", p.Last_Name "LastName", p.Height_CM "Height",p.Weight_KG "Weight", p.BMI "BMI", 
+	a.Appointment_id "AppointmentId", a.First_Name_Doctor "DoctorFirstName", p.Last_Name "DoctorLastName",a.Date_Appointment "DateAppointment",a.Time_Appointment "TimeAppointment"
+	FROM Persons p INNER JOIN Appointments a ON (p.Person_id=a.Person_id)
+	WHERE a.Date_Appointment<=DATEADD(MONTH,1,GETDATE())
+);
+
+-- Creating view for overweight
+CREATE VIEW view_Overweight_People
+AS
+SELECT p.Person_id PersonId, p.JMBG JMBG, p.First_Name FirstName, p.Last_Name LastName, p.Height_CM Height, p.Weight_KG Weight, p.BMI BMI FROM Persons p
+WHERE p.BMI>=30;
 
