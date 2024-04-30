@@ -128,8 +128,142 @@ RETURN
 );
 
 -- Creating view for overweight
+
 CREATE VIEW view_Overweight_People
 AS
-SELECT p.Person_id PersonId, p.JMBG JMBG, p.First_Name FirstName, p.Last_Name LastName, p.Height_CM Height, p.Weight_KG Weight, p.BMI BMI FROM Persons p
+SELECT p.Person_id PersonId, p.JMBG "JMBG", p.First_Name "FirstName", p.Last_Name "LastName", p.Height_CM "Height", p.Weight_KG "Weight", p.BMI "BMI" FROM Persons p
 WHERE p.BMI>=30;
+GO
+
+-- Creating function for overweight
+
+CREATE OR ALTER FUNCTION fn_Overweight_People()
+RETURNS TABLE
+AS
+RETURN
+(
+	SELECT p.Person_id PersonId, p.JMBG "JMBG", p.First_Name "FirstName", p.Last_Name "LastName", p.Height_CM "Height", p.Weight_KG "Weight", p.BMI "BMI" FROM Persons p
+	WHERE p.BMI>=30
+);
+GO
+
+-- Creating function for geting max height
+
+CREATE OR ALTER FUNCTION fn_Max_Height()
+RETURNS DECIMAL(5,2)
+AS
+BEGIN
+	DECLARE @MaxHeight DECIMAL(5,2);
+	SELECT @MaxHeight= MAX(p.Height_CM) FROM Persons p;
+	RETURN @MaxHeight;
+END;
+GO
+
+-- Function return all appointments for jmbg ---
+
+CREATE OR ALTER FUNCTION fn_GetAllAppointments_ByJMBG
+(
+	 @Jmbg CHAR(13)
+)
+RETURNS TABLE
+AS
+RETURN
+(
+	SELECT p.Person_id PersonId,p.JMBG "JMBG", p.First_Name "FirstName", p.Last_Name "LastName", p.Height_CM "Height",p.Weight_KG "Weight", p.BMI "BMI", 
+	a.Appointment_id "AppointmentId", a.First_Name_Doctor "DoctorFirstName", p.Last_Name "DoctorLastName",a.Date_Appointment "DateAppointment",a.Time_Appointment "TimeAppointment"
+	FROM Persons p INNER JOIN Appointments a ON (p.Person_id=a.Person_id)
+	WHERE p.JMBG=@Jmbg
+);
+
+GO
+
+-- Creating procedure for insert Appointment
+
+CREATE OR ALTER PROCEDURE ins_Appointment
+(
+	@Jmbg CHAR(13),
+	@DoctorFirstName NVARCHAR(30),
+	@DoctorLastName NVARCHAR(30),
+	@DateAppointment DATE,
+	@TimeAppointment TIME
+)
+AS
+BEGIN
+	DECLARE @PersonId UNIQUEIDENTIFIER;
+	SELECT @PersonId= p.Person_id FROM Persons p WHERE p.JMBG=@Jmbg
+
+	IF @PersonId IS NULL
+	BEGIN
+		THROW 70001, 'Person with this JMBG has not found!',1;
+		RETURN;
+	END;
+	INSERT INTO Appointments(Person_id,Appointment_id,First_Name_Doctor,Last_Name_Doctor,Date_Appointment,Time_Appointment)
+	VALUES (@PersonId,NEWID(),@DoctorFirstName,@DoctorLastName,@DateAppointment,@TimeAppointment);
+END;
+
+GO
+
+-- Creating procedure for update Appointment
+
+CREATE OR ALTER PROCEDURE upd_Appointment
+(
+	@Jmbg CHAR(13),
+	@AppointmentId UNIQUEIDENTIFIER,
+	@DoctorFirstName NVARCHAR(30),
+	@DoctorLastName NVARCHAR(30),
+	@DateAppointment DATE,
+	@TimeAppointment TIME
+)AS
+BEGIN
+	DECLARE @Personid UNIQUEIDENTIFIER;
+	SELECT @PersonId= p.Person_id FROM Persons p WHERE p.JMBG=@Jmbg
+
+	IF @PersonId IS NULL
+	BEGIN
+		THROW 70001, 'Person with this JMBG has not found!',1;
+		RETURN;
+	END;
+
+	IF NOT EXISTS (SELECT 1 FROM Appointments a WHERE a.Appointment_id=@AppointmentId)
+	BEGIN
+		THROW 70002, 'Appointment with this id has not found!',1;
+		RETURN;
+	END;
+
+	UPDATE Appointments
+	SET 
+	First_Name_Doctor=@DoctorFirstName,
+	Last_Name_Doctor=@DoctorLastName,
+	Date_Appointment=@DateAppointment,
+	Time_Appointment=@TimeAppointment
+	WHERE Appointment_id=@AppointmentId;
+
+END;
+
+-- Creating procedure for delete Appointment
+
+CREATE OR ALTER PROCEDURE del_Appointment
+(
+	@Jmbg CHAR(13),
+	@AppointmentId UNIQUEIDENTIFIER
+)
+AS
+BEGIN
+	DECLARE @Personid UNIQUEIDENTIFIER;
+	SELECT @PersonId= p.Person_id FROM Persons p WHERE p.JMBG=@Jmbg
+
+	IF @PersonId IS NULL
+	BEGIN
+		THROW 70001, 'Person with this JMBG has not found!',1;
+		RETURN;
+	END;
+
+	IF NOT EXISTS (SELECT 1 FROM Appointments a WHERE a.Appointment_id=@AppointmentId)
+	BEGIN
+		THROW 70002, 'Appointment with this id has not found!',1;
+		RETURN;
+	END;
+
+	DELETE FROM Appointments WHERE Appointment_id=@AppointmentId AND Person_id=@Personid;
+END;
 
